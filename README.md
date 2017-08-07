@@ -1,1 +1,1 @@
-# BlockWhitelist
+# Block Whitelist [![](http://cf.way2muchnoise.eu/blockwhitelist.svg)](https://minecraft.curseforge.com/projects/blockwhitelist) [![](http://cf.way2muchnoise.eu/versions/blockwhitelist.svg)](https://minecraft.curseforge.com/projects/blockwhitelist)
