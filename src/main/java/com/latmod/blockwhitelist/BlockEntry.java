@@ -3,12 +3,10 @@ package com.latmod.blockwhitelist;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 
-import java.util.function.Predicate;
-
 /**
  * @author LatvianModder
  */
-public class BlockEntry implements Predicate<IBlockState>
+public class BlockEntry extends BlockListEntry
 {
 	private final Block block;
 

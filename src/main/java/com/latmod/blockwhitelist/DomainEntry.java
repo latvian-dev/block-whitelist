@@ -3,12 +3,11 @@ package com.latmod.blockwhitelist;
 import net.minecraft.block.state.IBlockState;
 
 import java.util.Objects;
-import java.util.function.Predicate;
 
 /**
  * @author LatvianModder
  */
-public class DomainEntry implements Predicate<IBlockState>
+public class DomainEntry extends BlockListEntry
 {
 	private final String domain;
 

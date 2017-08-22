@@ -1,16 +1,17 @@
 package com.latmod.blockwhitelist;
 
+import com.feed_the_beast.ftbl.lib.util.CommonUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
 
 import java.util.Map;
-import java.util.function.Predicate;
 
 /**
  * @author LatvianModder
  */
-public class StateEntry implements Predicate<IBlockState>
+public class StateEntry extends BlockListEntry
 {
 	private final Map<IProperty<?>, Comparable<?>> properties;
 	private IBlockState state;
@@ -22,7 +23,7 @@ public class StateEntry implements Predicate<IBlockState>
 
 		for (Map.Entry<IProperty<?>, Comparable<?>> entry : properties.entrySet())
 		{
-			state = state.withProperty(entry.getKey(), BlockWhitelist.cast(entry.getValue()));
+			state = state.withProperty(entry.getKey(), CommonUtils.cast(entry.getValue()));
 		}
 	}
 
@@ -33,8 +34,7 @@ public class StateEntry implements Predicate<IBlockState>
 		{
 			return true;
 		}
-
-		if (state.getBlock() != s.getBlock())
+		else if (state.getBlock() != s.getBlock())
 		{
 			return false;
 		}
@@ -52,26 +52,38 @@ public class StateEntry implements Predicate<IBlockState>
 
 	public String toString()
 	{
-		StringBuilder builder = new StringBuilder(state.getBlock().getRegistryName() + ":{");
-
-		boolean first = true;
-
-		for (Map.Entry<IProperty<?>, Comparable<?>> property : properties.entrySet())
+		if (state == Blocks.AIR.getDefaultState())
 		{
-			if (first)
-			{
-				first = false;
-			}
-			else
-			{
-				builder.append(',');
-			}
-
-			builder.append(property.getKey().getName());
-			builder.append('=');
-			builder.append(property.getKey().getName(BlockWhitelist.cast(property.getValue())));
+			return "minecraft:air";
 		}
 
-		return builder.append('}').toString();
+		StringBuilder builder = new StringBuilder();
+		builder.append(Block.REGISTRY.getNameForObject(state.getBlock()));
+
+		if (!properties.isEmpty())
+		{
+			builder.append('[');
+			boolean first = true;
+
+			for (Map.Entry<IProperty<?>, Comparable<?>> entry : properties.entrySet())
+			{
+				if (first)
+				{
+					first = false;
+				}
+				else
+				{
+					builder.append(',');
+				}
+
+				builder.append(entry.getKey().getName());
+				builder.append('=');
+				builder.append(entry.getKey().getName(CommonUtils.cast(entry.getValue())));
+			}
+
+			builder.append(']');
+		}
+
+		return builder.toString();
 	}
 }

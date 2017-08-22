@@ -1,65 +1,43 @@
 package com.latmod.blockwhitelist;
 
+import com.feed_the_beast.ftbl.lib.util.CommonUtils;
+import com.feed_the_beast.ftbl.lib.util.JsonUtils;
+import com.feed_the_beast.ftbl.lib.util.StringUtils;
 import com.google.common.base.Optional;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockStone;
 import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
-import net.minecraft.util.EnumTypeAdapterFactory;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
-@Mod(modid = BlockWhitelist.MOD_ID, name = "Block Whitelist", version = "@VERSION@", acceptedMinecraftVersions = "[1.10,)", acceptableRemoteVersions = "*")
-@Mod.EventBusSubscriber
+@Mod(modid = BlockWhitelist.MOD_ID, name = "Block Whitelist", version = "@VERSION@", acceptedMinecraftVersions = "[1.12,)", dependencies = "required-after:ftbl", acceptableRemoteVersions = "*")
 public class BlockWhitelist
 {
 	public static final String MOD_ID = "blockwhitelist";
 
-	private static Map<Integer, BlockList> map;
+	static Map<Integer, BlockList> map;
 	private static File configFile;
-	private static Gson gson;
 
 	@Mod.EventHandler
 	public void onPreInit(FMLPreInitializationEvent event)
 	{
 		map = new LinkedHashMap<>();
 		configFile = new File(event.getModConfigurationDirectory(), "blockwhitelist.json");
-		GsonBuilder builder = new GsonBuilder();
-		builder.setPrettyPrinting();
-		builder.disableHtmlEscaping();
-		builder.setLenient();
-		builder.registerTypeHierarchyAdapter(ITextComponent.class, new ITextComponent.Serializer());
-		builder.registerTypeHierarchyAdapter(Style.class, new Style.Serializer());
-		builder.registerTypeAdapterFactory(new EnumTypeAdapterFactory());
-		gson = builder.create();
 	}
 
 	@Mod.EventHandler
@@ -76,11 +54,11 @@ public class BlockWhitelist
 		{
 			BlockList list = new BlockList();
 			list.whitelist = true;
-			list.message = new TextComponentString("Example config/blockwhitelist.json loaded!");
-			list.predicates.add(new BlockEntry(Blocks.GRASS));
-			list.predicates.add(new StateEntry(Blocks.STONE, Collections.singletonMap(BlockStone.VARIANT, BlockStone.EnumType.GRANITE)));
-			list.predicates.add(new BlockEntry(Blocks.LOG));
-			list.predicates.add(new DomainEntry("buildcraft"));
+			list.message = StringUtils.color(new TextComponentString("Example config/blockwhitelist.json loaded!"), TextFormatting.RED);
+			list.entries.add(new BlockEntry(Blocks.GRASS));
+			list.entries.add(new StateEntry(Blocks.STONE, Collections.singletonMap(BlockStone.VARIANT, BlockStone.EnumType.GRANITE)));
+			list.entries.add(new BlockEntry(Blocks.LOG));
+			list.entries.add(new DomainEntry("buildcraft").setMessage(StringUtils.color(new TextComponentString("Buildcraft is banned! Edit config/blockwhitelist.json!"), TextFormatting.RED)));
 			map.put(0, list);
 
 			list = new BlockList();
@@ -97,22 +75,30 @@ public class BlockWhitelist
 					JsonObject object = new JsonObject();
 					object.addProperty("dimension", entry.getKey());
 					list = entry.getValue();
-					object.add("message", gson.toJsonTree(list.message));
+					object.add("message", JsonUtils.serializeTextComponent(list.message));
 
 					JsonArray alist = new JsonArray();
 
-					for (Predicate<IBlockState> predicate : list.predicates)
+					for (BlockListEntry entry1 : list.entries)
 					{
-						alist.add(new JsonPrimitive(predicate.toString()));
+						if (entry1.message == null)
+						{
+							alist.add(entry1.toString());
+						}
+						else
+						{
+							JsonObject o = new JsonObject();
+							o.add("message", JsonUtils.serializeTextComponent(entry1.message));
+							o.addProperty("value", entry1.toString());
+							alist.add(o);
+						}
 					}
 
 					object.add(list.whitelist ? "whitelist" : "blacklist", alist);
 					array.add(object);
 				}
 
-				OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(configFile), "UTF-8");
-				gson.toJson(array, writer);
-				writer.close();
+				JsonUtils.toJson(configFile, array);
 			}
 			catch (Exception ex)
 			{
@@ -122,9 +108,7 @@ public class BlockWhitelist
 
 		try
 		{
-			InputStreamReader reader = new InputStreamReader(new FileInputStream(configFile), "UTF-8");
-			JsonArray array = new JsonParser().parse(reader).getAsJsonArray();
-			reader.close();
+			JsonArray array = JsonUtils.fromJson(configFile).getAsJsonArray();
 
 			for (JsonElement element : array)
 			{
@@ -134,59 +118,92 @@ public class BlockWhitelist
 
 				for (JsonElement element1 : object.get(list.whitelist ? "whitelist" : "blacklist").getAsJsonArray())
 				{
-					String[] s = element1.getAsString().split(":", 3);
+					String s;
+					ITextComponent msg = null;
+					BlockListEntry entry = null;
 
-					if (s.length == 1 || s.length >= 2 && s[1].equals("*"))
+					if (element1.isJsonObject())
 					{
-						list.predicates.add(new DomainEntry(s[0]));
+						JsonObject o = element1.getAsJsonObject();
+						s = o.get("value").getAsString();
+
+						if (o.has("message"))
+						{
+							msg = JsonUtils.deserializeTextComponent(o.get("message"));
+						}
 					}
-					else if (s.length >= 2)
+					else
 					{
-						Block block = Block.REGISTRY.getObject(new ResourceLocation(s[0], s[1]));
+						s = element1.getAsString();
+					}
+
+					if (s.isEmpty() || s.equals("*"))
+					{
+						entry = EverythingEntry.INSTANCE;
+					}
+					else if (s.endsWith(":*"))
+					{
+						entry = new DomainEntry(s.substring(0, s.lastIndexOf(':')));
+					}
+					else if (s.charAt(s.length() - 1) == ']')
+					{
+						int idx = s.indexOf('[');
+						Block block = Block.REGISTRY.getObject(new ResourceLocation(s.substring(0, idx)));
 
 						if (block != Blocks.AIR)
 						{
-							if (s.length == 2 || s[2].equals("*"))
+							String p = s.substring(idx + 1, s.length() - 1);
+
+							if (p.equals("*"))
 							{
-								list.predicates.add(new BlockEntry(block));
+								entry = new BlockEntry(block);
 							}
-							else if (s[2].startsWith("{") && s[2].endsWith("}"))
+							else
 							{
 								Map<IProperty<?>, Comparable<?>> properties = new HashMap<>();
 
-								for (Map.Entry<String, JsonElement> entry : gson.fromJson(s[2], JsonObject.class).entrySet())
+								if (!p.isEmpty())
 								{
-									IProperty<?> property = block.getBlockState().getProperty(entry.getKey());
-
-									if (property != null)
+									for (String entry1 : s.split(","))
 									{
-										Optional<?> optional = property.parseValue(entry.getValue().getAsString());
+										String[] entry1s = entry1.split("=");
+										IProperty<?> property = block.getBlockState().getProperty(entry1s[0]);
 
-										if (optional.isPresent())
+										if (property != null)
 										{
-											properties.put(property, cast(optional.get()));
+											Optional<?> optional = property.parseValue(entry1s[1]);
+
+											if (optional.isPresent())
+											{
+												properties.put(property, CommonUtils.cast(optional.get()));
+											}
 										}
 									}
 								}
 
-								list.predicates.add(new StateEntry(block, properties));
+								entry = properties.isEmpty() ? new BlockEntry(block) : new StateEntry(block, properties);
 							}
 						}
+					}
+					else
+					{
+						Block block = Block.REGISTRY.getObject(new ResourceLocation(s));
+
+						if (block != Blocks.AIR)
+						{
+							entry = new BlockEntry(block);
+						}
+					}
+
+					if (entry != null)
+					{
+						list.entries.add(entry.setMessage(msg));
 					}
 				}
 
 				if (object.has("message"))
 				{
-					JsonElement message = object.get("message");
-					if (message.isJsonPrimitive())
-					{
-						list.message = new TextComponentString(message.getAsString());
-						list.message.getStyle().setColor(TextFormatting.RED);
-					}
-					else
-					{
-						list.message = gson.fromJson(message, ITextComponent.class);
-					}
+					list.message = JsonUtils.deserializeTextComponent(object.get("message"));
 				}
 
 				map.put(object.get("dimension").getAsInt(), list);
@@ -198,29 +215,6 @@ public class BlockWhitelist
 		{
 			ex.printStackTrace();
 			return false;
-		}
-	}
-
-	public static <T> T cast(Object o)
-	{
-		return (T) o;
-	}
-
-	@SubscribeEvent(priority = EventPriority.HIGH)
-	public static void onBlockPlace(BlockEvent.PlaceEvent event)
-	{
-		if (!event.getWorld().isRemote)
-		{
-			BlockList list = map.get(event.getWorld().provider.getDimension());
-			if (list != null && list.contains(event.getPlacedBlock()) != list.whitelist)
-			{
-				event.setCanceled(true);
-
-				if (list.message != null)
-				{
-					event.getPlayer().sendStatusMessage(list.message, true);
-				}
-			}
 		}
 	}
 }
