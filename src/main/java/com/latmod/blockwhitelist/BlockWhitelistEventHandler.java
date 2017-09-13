@@ -14,20 +14,20 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 @EventHandler
 public class BlockWhitelistEventHandler
 {
-	public static final ResourceLocation RELOAD_ID = new ResourceLocation(BlockWhitelist.MOD_ID, "config");
+	public static final ResourceLocation RELOAD_CONFIG = new ResourceLocation(BlockWhitelist.MOD_ID, "config");
 
 	@SubscribeEvent
 	public static void registerReloadIds(ReloadEvent.RegisterIds event)
 	{
-		event.register(RELOAD_ID);
+		event.register(RELOAD_CONFIG);
 	}
 
 	@SubscribeEvent
 	public static void onReload(ReloadEvent event)
 	{
-		if (event.getSide().isServer() && event.reload(RELOAD_ID) && !BlockWhitelist.reload())
+		if (event.getSide().isServer() && event.reload(RELOAD_CONFIG) && !BlockWhitelist.reload())
 		{
-			event.failedToReload(RELOAD_ID);
+			event.failedToReload(RELOAD_CONFIG);
 		}
 	}
 
