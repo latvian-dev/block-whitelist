@@ -25,10 +25,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Mod(modid = BlockWhitelist.MOD_ID, name = "Block Whitelist", version = "@VERSION@", acceptedMinecraftVersions = "[1.12,)", dependencies = "required-after:ftbl", acceptableRemoteVersions = "*")
+@Mod(modid = BlockWhitelist.MOD_ID, name = BlockWhitelist.MOD_NAME, version = BlockWhitelist.VERSION, acceptedMinecraftVersions = "[1.12,)", dependencies = "required-after:ftbl", acceptableRemoteVersions = "*")
 public class BlockWhitelist
 {
 	public static final String MOD_ID = "blockwhitelist";
+	public static final String MOD_NAME = "Block Whitelist";
+	public static final String VERSION = "@VERSION@";
 
 	static Map<Integer, BlockList> map;
 	private static File configFile;

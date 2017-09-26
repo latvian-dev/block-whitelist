@@ -9,9 +9,9 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.0.3"
-group = "com.latmod.blockwhitelist"
-archivesBaseName = "BlockWhitelist"
+version = "${mod_version}"
+group = package_group
+archivesBaseName = mod_name
 
 sourceCompatibility = targetCompatibility = "1.8"
 compileJava {
@@ -19,9 +19,12 @@ compileJava {
 }
 
 minecraft {
-	version = "1.12.2-14.23.0.2491"
+	version = "${mc_version}-${forge_version}"
 	runDir = "run"
-	mappings = "snapshot_20170925"
+	mappings = "${mappings_version}"
+
+	replace "@VERSION@", project.version
+	replaceIn "BlockWhitelist.java"
 }
 
 repositories {
@@ -29,18 +32,7 @@ repositories {
 }
 
 dependencies {
-	compile 'com.latmod.mods:FTBLib:4.1.4:api'
-}
-
-sourceSets {
-	main {
-		java {
-			srcDir 'src/main/java'
-		}
-		resources {
-			srcDir 'src/main/resources'
-		}
-	}
+	compile "com.latmod.mods:FTBLib:${ftblib_version}:api"
 }
 
 processResources {

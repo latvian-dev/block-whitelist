@@ -4,7 +4,7 @@
 		"name": "Block Whitelist",
 		"description": "This mod restricts block placement per-dimension",
 		"version": "${version}",
-		"mcversion": "1.12",
+		"mcversion": "${mcversion}",
 		"url": "https://minecraft.curseforge.com/projects/blockwhitelist",
 		"updateUrl": "",
 		"authorList": ["LatvianModder"],
