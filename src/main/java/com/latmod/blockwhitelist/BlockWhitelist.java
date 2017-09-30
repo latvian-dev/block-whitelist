@@ -1,5 +1,6 @@
 package com.latmod.blockwhitelist;
 
+import com.feed_the_beast.ftbl.lib.internal.FTBLibFinals;
 import com.feed_the_beast.ftbl.lib.util.CommonUtils;
 import com.feed_the_beast.ftbl.lib.util.JsonUtils;
 import com.feed_the_beast.ftbl.lib.util.StringUtils;
@@ -25,7 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Mod(modid = BlockWhitelist.MOD_ID, name = BlockWhitelist.MOD_NAME, version = BlockWhitelist.VERSION, acceptedMinecraftVersions = "[1.12,)", dependencies = "required-after:ftbl", acceptableRemoteVersions = "*")
+@Mod(modid = BlockWhitelist.MOD_ID, name = BlockWhitelist.MOD_NAME, version = BlockWhitelist.VERSION, acceptedMinecraftVersions = "[1.12,)", dependencies = "required-after:" + FTBLibFinals.MOD_ID, acceptableRemoteVersions = "*")
 public class BlockWhitelist
 {
 	public static final String MOD_ID = "blockwhitelist";
