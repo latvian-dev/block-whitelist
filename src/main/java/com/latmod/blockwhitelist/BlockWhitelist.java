@@ -101,7 +101,7 @@ public class BlockWhitelist
 					array.add(object);
 				}
 
-				JsonUtils.toJson(configFile, array);
+				JsonUtils.toJson(array, configFile);
 			}
 			catch (Exception ex)
 			{
